@@ -1,3 +1,5 @@
+> 当前分支已增加文档 ETL 与受控 SQL ReAct 链路。请以 [中文使用说明](README.zh.md) 和 [当前项目结构](docs/project.md) 为准；以下保留上游 starter kit 原始介绍。
+
 <div align="center">
 
 # DataAgent-Bench Starter Kit

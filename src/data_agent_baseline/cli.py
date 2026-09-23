@@ -21,7 +21,7 @@ from data_agent_baseline.tools.filesystem import list_context_tree
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CONFIGS_DIR = PROJECT_ROOT / "configs"
-DATA_DIR = PROJECT_ROOT / "data"
+DATA_DIR = PROJECT_ROOT / "public"
 ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 ARTIFACT_RUNS_DIR = ARTIFACTS_DIR / "runs"
 
@@ -71,14 +71,14 @@ def _build_compact_progress_fields(
 
 @app.callback()
 def cli() -> None:
-    """Utilities for working with the local DABench baseline project."""
+    """本地 ReAct 数据分析、文档 ETL 与结果验收。"""
 
 
 @app.command()
 def status(
     config: Path = typer.Option(..., exists=True, dir_okay=False, help="YAML config path."),
 ) -> None:
-    """Show the local project layout and public dataset presence."""
+    """查看项目目录和公开数据集状态。"""
     app_config = load_app_config(config)
     config_path = config.resolve()
     public_dataset = DABenchPublicDataset(app_config.dataset.root_path)
@@ -113,7 +113,7 @@ def inspect_task(
     task_id: str,
     config: Path = typer.Option(..., exists=True, dir_okay=False, help="YAML config path."),
 ) -> None:
-    """Show task metadata and available context files."""
+    """查看任务问题和可用上下文。"""
     app_config = load_app_config(config)
     dataset = DABenchPublicDataset(app_config.dataset.root_path)
     task = dataset.get_task(task_id)
@@ -135,7 +135,7 @@ def run_task_command(
     task_id: str,
     config: Path = typer.Option(..., exists=True, dir_okay=False, help="YAML config path."),
 ) -> None:
-    """Run the ReAct baseline on one task."""
+    """执行单任务的数据准备、文档抽取与 ReAct 求解。"""
     app_config = load_app_config(config)
     try:
         _, run_output_dir = create_run_output_dir(app_config.run.output_dir, run_id=app_config.run.run_id)
@@ -158,10 +158,10 @@ def run_benchmark_command(
     config: Path = typer.Option(..., exists=True, dir_okay=False, help="YAML config path."),
     limit: int | None = typer.Option(None, min=1, help="Maximum number of tasks to run."),
 ) -> None:
-    """Run the ReAct baseline on multiple tasks from the config selection."""
+    """按配置批量执行任务，保存逐任务进度与汇总。"""
     app_config = load_app_config(config)
     dataset = DABenchPublicDataset(app_config.dataset.root_path)
-    task_total = len(dataset.iter_tasks())
+    task_total = len(set(app_config.dataset.task_ids or dataset.list_task_ids()))
     if limit is not None:
         task_total = min(task_total, limit)
     effective_workers = app_config.run.max_workers
@@ -255,6 +255,22 @@ def run_benchmark_command(
     console.print(f"Run output: {run_output_dir}")
     console.print(f"Tasks attempted: {len(artifacts)}")
     console.print(f"Succeeded tasks: {sum(1 for item in artifacts if item.succeeded)}")
+
+
+@app.command("evaluate")
+def evaluate_command(
+    run_dir: Path = typer.Argument(..., exists=True, file_okay=False),
+    gold_root: Path = typer.Option(PROJECT_ROOT / "public" / "output", file_okay=False),
+    ordered: bool = typer.Option(False, help="严格比较行顺序。"),
+    decimals: int | None = typer.Option(None, min=0, max=15, help="可选数值舍入位数。"),
+    headers: bool = typer.Option(False, help="严格比较列名。"),
+) -> None:
+    """独立比较运行产物与公开标准答案，不向求解过程提供答案。"""
+    from data_agent_baseline.benchmark.evaluate import evaluate_run
+    report = evaluate_run(run_dir, gold_root, ordered=ordered, decimals=decimals, headers=headers)
+    console.print(f"本地比较匹配 {report['matched_count']}/{report['task_count']}，"
+                  f"准确率 {report['accuracy']:.2%}；此指标不是官方评分。")
+    console.print(f"详细报告：{run_dir / 'evaluation.json'}")
 
 
 def main() -> None:

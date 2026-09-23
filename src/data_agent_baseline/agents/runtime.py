@@ -15,6 +15,8 @@ class StepRecord:
     raw_response: str
     observation: dict[str, Any]
     ok: bool
+    model_seconds: float = 0
+    tool_seconds: float = 0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

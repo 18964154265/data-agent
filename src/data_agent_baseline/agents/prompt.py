@@ -37,21 +37,24 @@ Example response when you have the final answer:
 
 def build_system_prompt(tool_descriptions: str, system_prompt: str | None = None) -> str:
     base_prompt = system_prompt or REACT_SYSTEM_PROMPT
+    examples = RESPONSE_EXAMPLES
+    if "submit_answer" in tool_descriptions:
+        examples = '响应示例：\n```json\n{"thought":"先读取程序版本","action":"read_solution","action_input":{}}\n```'
     return (
         f"{base_prompt}\n\n"
         "Available tools:\n"
         f"{tool_descriptions}\n\n"
-        f"{RESPONSE_EXAMPLES}\n\n"
+        f"{examples}\n\n"
         "You must always return a single ```json fenced block containing one JSON object "
         "with keys `thought`, `action`, and `action_input`, and no extra text."
     )
 
 
-def build_task_prompt(task: PublicTask) -> str:
+def build_task_prompt(task: PublicTask, submission_tool: str = "answer") -> str:
     return (
         f"Question: {task.question}\n"
         "All tool file paths are relative to the task context directory. "
-        "When you have the final table, call the `answer` tool."
+        f"When you have verified the final result, call the `{submission_tool}` tool."
     )
 
 

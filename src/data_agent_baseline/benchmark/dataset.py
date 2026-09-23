@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -56,6 +57,8 @@ class DABenchPublicDataset:
         return [path.name for path in self.task_dirs()]
 
     def get_task(self, task_id: str) -> PublicTask:
+        if not re.fullmatch(r"task_\d+", task_id):
+            raise ValueError("任务 ID 必须是 task_<数字>")
         task_dir = self.root_dir / task_id
         task_json_path = task_dir / "task.json"
         if not task_json_path.exists():

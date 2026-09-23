@@ -22,17 +22,17 @@ htmlcov/
 .env.*.local
 .codex
 
-# Local data, docs, tests, and artifacts
-data/
-docs/
-tests/
+# 本地数据与运行产物
+/data/
+/public/
 evaluation/
 artifacts/*
 !artifacts/.gitkeep
 
-# Local configs
+# 本地配置（可能包含 API key）
+config.yaml
+config.yml
 configs/*
-!configs/react_baseline.example.yaml
 
 # OS / notebook noise
 .DS_Store
